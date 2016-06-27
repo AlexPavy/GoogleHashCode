@@ -20,14 +20,14 @@ data = Data()
 
 
 def process_line_input(data_line, _data):
-    print("process_line_input", data_line, _data)
+    # print("process_line_input", data_line, _data)
     _data.l += 1
     if _data.l == 1:
         _data.P = int(data_line[0])
 
     # no \n for final char
     elif _data.l == 3 * _data.P + 1:
-        print("no jump for final char", _data.l, _data.P, data_line)
+        # print("no jump for final char", _data.l, _data.P, data_line)
         _data.c_province.append(data_line)
         _data.provinces.append(_data.c_province)
 
@@ -65,18 +65,18 @@ def print_province(_prov):
     paths = set([])
 
     for i, c in enumerate(_prov[0]):
-        add_paths(paths, _prov, (0, i, -1), (0, i), "")
-        add_paths(paths, _prov, (0, i, 1), (0, i), "")
+        add_paths(paths, _prov, (0, i, -1), (0, i, -1), "")
+        add_paths(paths, _prov, (0, i, 1), (0, i, 1), "")
     for i, c in enumerate(_prov[1]):
-        add_paths(paths, _prov, (1, i, -1), (1, i), "")
-        add_paths(paths, _prov, (1, i, 1), (1, i), "")
+        add_paths(paths, _prov, (1, i, -1), (1, i, -1), "")
+        add_paths(paths, _prov, (1, i, 1), (1, i, 1), "")
 
     print("province paths", _prov, paths)
     print(len(paths))
 
 
-def add_paths_tail(paths, _prov, s, pos, path, just_changed_row):
-    # print("addPathsTail", pos, path)
+def add_paths_tail(paths, _prov, s, pos, path, just_changed_row, just_moved_forward, has_previously_changed_row):
+    # print("addPathsTail", s, pos, path)
     col = pos[1]
 
     if not (in_borders(col, _prov)):
@@ -86,30 +86,44 @@ def add_paths_tail(paths, _prov, s, pos, path, just_changed_row):
         paths.add(path)
         return
 
+    is_end_of_line = False
+    direction = pos[2]
+
     # same direction
-    next_col = col - s[2]
-    if in_borders(next_col, prov):
+    next_col = col + direction
+    if in_borders(next_col, prov) and not (just_moved_forward and has_previously_changed_row):
         sm_dir_path = path + _prov[pos[0]][next_col]
-        add_paths_tail(paths, _prov, s, (pos[0], next_col), sm_dir_path, False)
+        # print("same direction", pos[0], next_col, sm_dir_path)
+        add_paths_tail(paths, _prov, s, (pos[0], next_col, direction), sm_dir_path,
+                       False, True, has_previously_changed_row)
+
+    # turn around
+    else:
+        direction = -direction
+        is_end_of_line = True
 
     # change direction
     other_row = 1 - pos[0]
     if not just_changed_row:
-        print("change direction", other_row, col, _prov)
         ch_dir_path = path + _prov[other_row][col]
-        add_paths_tail(paths, _prov, s, (other_row, col), ch_dir_path, True)
+        # print("change direction", other_row, col, ch_dir_path)
+        has_previously_changed_row = has_previously_changed_row or (not is_end_of_line)
+        add_paths_tail(paths, _prov, s, (other_row, col, direction), ch_dir_path,
+                       True, False, has_previously_changed_row)
 
 
 def get_first_loop(_prov, s, pos, path):
-    col = pos[1] + s[2]
-    # print("getFirstLoop", prov, s, pos)
+    col = pos[1]
+    print("getFirstLoop", _prov, s, pos)
+
+    path += _prov[pos[0]][col]
 
     # forward
     go_forth = False
-    while in_borders(col, _prov):
+    while in_borders(col + s[2], _prov):
         # print("forward", col)
-        path += _prov[pos[0]][col]
         col += s[2]
+        path += _prov[pos[0]][col]
         go_forth = True
 
     if not go_forth:
@@ -117,36 +131,31 @@ def get_first_loop(_prov, s, pos, path):
 
     # turn around
     other_row = 1 - pos[0]
-
-    # adjust
-    if not (in_borders(col, _prov)):
-        col -= s[2]
+    other_direction = -pos[2]
 
     # backward
-    go_back = False
     while col != s[1] and in_borders(col, _prov):
         # print("backward", col)
         path += _prov[other_row][col]
-        col -= s[2]
-        go_back = True
+        col += other_direction
 
     # adjust
-    if go_back:
-        path += _prov[other_row][col]
+    path += _prov[other_row][col]
 
     if is_final_path(path, _prov):
-        return path, (pos[0], col)
+        return path, (other_row, col, other_direction)
 
-    if in_borders(col - s[2], _prov):
-        col -= s[2]
+    if in_borders(col + other_direction, _prov):
+        col += other_direction
         path += _prov[other_row][col]
 
-    return path, (pos[0], col)
+    return path, (other_row, col, other_direction)
 
 
 def add_paths(paths, _prov, s, pos, path):
     (path, pos) = get_first_loop(_prov, s, pos, path)
-    add_paths_tail(paths, _prov, s, pos, path, False)
+    print("got FirstLoop", _prov, s, pos, path)
+    add_paths_tail(paths, _prov, s, pos, path, False, False, False)
 
 
 def in_borders(col, _prov):
