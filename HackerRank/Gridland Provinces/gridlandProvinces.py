@@ -1,6 +1,7 @@
+# https://www.hackerrank.com/contests/june-world-codesprint/challenges/gridland-provinces
 # Read data
 
-file_name = 'test case 0'
+file_name = 'test case 1bis'
 
 
 class Data:
@@ -25,20 +26,14 @@ def process_line_input(data_line, _data):
     if _data.l == 1:
         _data.P = int(data_line[0])
 
-    # no \n for final char
-    elif _data.l == 3 * _data.P + 1:
-        # print("no jump for final char", _data.l, _data.P, data_line)
-        _data.c_province.append(data_line)
-        _data.provinces.append(_data.c_province)
-
     elif _data.l > 1:
         if _data.l % 3 == 0:
-            _data.c_province = [data_line[:-1]]
+            _data.c_province = [data_line.rstrip()]
         if _data.l % 3 == 1:
-            _data.c_province.append(data_line[:-1])
+            _data.c_province.append(data_line.rstrip())
             _data.provinces.append(_data.c_province)
 
-
+###################################
 # On local PC
 with open(file_name, 'r') as f:
     while True:
@@ -59,7 +54,7 @@ with open(file_name, 'r') as f:
 
 # pos = (provinceRow, provinceCol)
 # s = pos at start (provinceRow, provinceCol, direction)
-
+###################################
 
 def print_province(_prov):
     paths = set([])
@@ -71,13 +66,16 @@ def print_province(_prov):
         add_paths(paths, _prov, (1, i, -1), (1, i, -1), "")
         add_paths(paths, _prov, (1, i, 1), (1, i, 1), "")
 
-    print("province paths", _prov, paths)
-    print(len(paths))
+    print("len of paths", len(paths), _prov)
+    print_province_paths(paths)
 
 
-def add_paths_tail(paths, _prov, s, pos, path, just_changed_row, just_moved_forward, has_previously_changed_row):
+def add_paths_tail(paths, _prov, s, pos, path, just_changed_row, just_moved_forward, has_moved_forward_twice):
     # print("addPathsTail", s, pos, path)
     col = pos[1]
+
+    if path == "auuabuubb":
+        test = 1
 
     if not (in_borders(col, _prov)):
         return
@@ -86,35 +84,39 @@ def add_paths_tail(paths, _prov, s, pos, path, just_changed_row, just_moved_forw
         paths.add(path)
         return
 
-    is_end_of_line = False
+    turn_around = False
     direction = pos[2]
 
-    # same direction
+    # same row
+    will_move_forward_twice = has_moved_forward_twice
     next_col = col + direction
-    if in_borders(next_col, prov) and not (just_moved_forward and has_previously_changed_row):
+    if in_borders(next_col, _prov):
+        # test_position(_prov, (pos[0], next_col, direction))
+        if just_moved_forward:
+            will_move_forward_twice = True
+
         sm_dir_path = path + _prov[pos[0]][next_col]
-        # print("same direction", pos[0], next_col, sm_dir_path)
+        # print("same row", pos[0], next_col, sm_dir_path)
         add_paths_tail(paths, _prov, s, (pos[0], next_col, direction), sm_dir_path,
-                       False, True, has_previously_changed_row)
+                       False, True, will_move_forward_twice)
 
     # turn around
     else:
         direction = -direction
-        is_end_of_line = True
+        turn_around = True
 
-    # change direction
+    # change row
     other_row = 1 - pos[0]
-    if not just_changed_row:
+    if (not just_changed_row) and (turn_around or not has_moved_forward_twice):
         ch_dir_path = path + _prov[other_row][col]
-        # print("change direction", other_row, col, ch_dir_path)
-        has_previously_changed_row = has_previously_changed_row or (not is_end_of_line)
+        # print("change row", other_row, col, ch_dir_path)
         add_paths_tail(paths, _prov, s, (other_row, col, direction), ch_dir_path,
-                       True, False, has_previously_changed_row)
+                       True, False, has_moved_forward_twice)
 
 
 def get_first_loop(_prov, s, pos, path):
     col = pos[1]
-    print("getFirstLoop", _prov, s, pos)
+    # print("getFirstLoop", _prov, s, pos)
 
     path += _prov[pos[0]][col]
 
@@ -154,7 +156,7 @@ def get_first_loop(_prov, s, pos, path):
 
 def add_paths(paths, _prov, s, pos, path):
     (path, pos) = get_first_loop(_prov, s, pos, path)
-    print("got FirstLoop", _prov, s, pos, path)
+    # print("got FirstLoop", _prov, s, pos, path)
     add_paths_tail(paths, _prov, s, pos, path, False, False, False)
 
 
@@ -165,6 +167,20 @@ def in_borders(col, _prov):
 def is_final_path(path, _prov):
     return len(path) == 2 * len(_prov[0])
 
+
+def test_position(_prov, pos):
+    if pos[0] > 1 or pos[0] < 0:
+        print("pos[0] out of boundaries", pos[0])
+    if not len(_prov[0]) == len(_prov[1]):
+        print("_prov uneven", _prov)
+    if not in_borders(pos[1], _prov):
+        print("not in borders", pos[1], len(_prov[0]))
+
+
+def print_province_paths(_paths):
+    print("province paths")
+    for path in _paths:
+        print(path)
 
 # printProvince(provinces[1])
 for prov in data.provinces:
