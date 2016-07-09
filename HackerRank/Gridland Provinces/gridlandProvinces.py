@@ -1,7 +1,7 @@
 # https://www.hackerrank.com/contests/june-world-codesprint/challenges/gridland-provinces
 # Read data
 
-file_name = 'test case 1bis'
+file_name = 'test case 5'
 
 
 class Data:
@@ -67,15 +67,12 @@ def print_province(_prov):
         add_paths(paths, _prov, (1, i, 1), (1, i, 1), "")
 
     print("len of paths", len(paths), _prov)
-    print_province_paths(paths)
+    # print_province_paths(paths)
 
 
 def add_paths_tail(paths, _prov, s, pos, path, just_changed_row, just_moved_forward, has_moved_forward_twice):
     # print("addPathsTail", s, pos, path)
     col = pos[1]
-
-    if path == "auuabuubb":
-        test = 1
 
     if not (in_borders(col, _prov)):
         return
@@ -157,7 +154,7 @@ def get_first_loop(_prov, s, pos, path):
 def add_paths(paths, _prov, s, pos, path):
     (path, pos) = get_first_loop(_prov, s, pos, path)
     # print("got FirstLoop", _prov, s, pos, path)
-    add_paths_tail(paths, _prov, s, pos, path, False, False, False)
+    add_paths_tail(paths, _prov, s, pos, path, False, True, False)
 
 
 def in_borders(col, _prov):
@@ -177,10 +174,18 @@ def test_position(_prov, pos):
         print("not in borders", pos[1], len(_prov[0]))
 
 
+def test_contains_same_char(res_path):
+    for c in range(len(res_path)):
+        for c2 in range(c):
+            if res_path[c] == res_path[c2]:
+                print("contains same char", res_path, c, res_path[c])
+
+
 def print_province_paths(_paths):
     print("province paths")
     for path in _paths:
         print(path)
+        test_contains_same_char(path)
 
 # printProvince(provinces[1])
 for prov in data.provinces:
